@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Requests | Admin Panel</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 78px;
+        }
+        body { min-height: 100vh; background: var(--bs-body-bg); }
+        .sidebar { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); transition: width 0.35s ease; z-index: 1030; overflow-y: auto; background: var(--bs-dark); color: white; }
+        .sidebar.collapsed { width: var(--sidebar-collapsed-width); }
+        .sidebar.collapsed .sidebar-text { display: none; }
+        .sidebar.collapsed .sidebar-header h4 { display: none; }
+        .main-content { margin-left: var(--sidebar-width); transition: margin-left 0.35s ease; }
+        .main-content.collapsed { margin-left: var(--sidebar-collapsed-width); }
+        @media (max-width: 991.98px) { .sidebar { width: 0; } .sidebar.show { width: var(--sidebar-width); } .main-content { margin-left: 0 !important; } }
+        .table-responsive { max-height: 70vh; overflow-y: auto; }
+        .badge-pending { background-color: #ffc107; color: #000; }
+        .badge-assigned { background-color: #17a2b8; color: #fff; }
+        .badge-in-progress { background-color: #007bff; color: #fff; }
+        .badge-completed { background-color: #28a745; color: #fff; }
+        .priority-normal { background-color: #6c757d; color: #fff; }
+        .priority-urgent { background-color: #fd7e14; color: #fff; }
+        .priority-emergency { background-color: #dc3545; color: #fff; }
+        .category-icon { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 8px; }
+        .filter-section { background-color: var(--bs-light); border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .photo-thumbnail { width: 40px; height: 40px; border-radius: 5px; cursor: pointer; object-fit: cover; }
+        .photo-modal-img { max-width: 100%; max-height: 80vh; }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header d-flex align-items-center justify-content-between p-4 border-bottom border-light border-opacity-10">
+        <h4 class="mb-0 sidebar-text">Admin Panel</h4>
+        <button id="sidebarToggle" class="btn btn-link text-white"><i class="bi bi-list fs-4"></i></button>
+    </div>
+    <div class="p-3">
+        <ul class="nav flex-column gap-2">
+            <li class="nav-item"><a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2 fs-4 me-3"></i><span class="sidebar-text">Dashboard</span></a></li>
+            <li class="nav-item"><a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('users') }}"><i class="bi bi-people fs-4 me-3"></i><span class="sidebar-text">Users</span></a></li>
+            <li class="nav-item"><a class="nav-link active text-white d-flex align-items-center" href="{{ url_for('requests') }}"><i class="bi bi-list-check fs-4 me-3"></i><span class="sidebar-text">Requests</span></a></li>
+            <li class="nav-item"><a class="nav-link text-white-75 d-flex align-items-center" href="#"><i class="bi bi-bar-chart fs-4 me-3"></i><span class="sidebar-text">Analytics</span></a></li>
+            <li class="nav-item mt-auto pt-4"><a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right fs-4 me-3"></i><span class="sidebar-text">Logout</span></a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+
+    
+
+    <!-- Topbar -->
+    <header class="navbar navbar-expand-lg bg-white shadow-sm sticky-top px-4">
+        <div class="container-fluid">
+            <button class="btn btn-outline-secondary d-lg-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar"><i class="bi bi-list fs-4"></i></button>
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="themeToggle">
+                    <label class="form-check-label" for="themeToggle"><i class="bi bi-moon-stars"></i></label>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-link text-dark position-relative" data-bs-toggle="dropdown"><i class="bi bi-bell fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ requests.items | selectattr('status', 'equalto', 'Pending') | list | length }}
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown">
+                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:38px;height:38px;"><i class="bi bi-person"></i></div>
+                        <div class="d-none d-md-block">
+                            <div>{{ current_user.full_name }}</div>
+                            <small class="text-muted">{{ current_user.role.title() }}</small>
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person-circle me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="p-4 p-lg-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item active">All Requests</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2 mb-0"><i class="bi bi-list-check me-2 text-primary"></i>All Maintenance Requests</h1>
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="window.location.reload()"><i class="bi bi-arrow-repeat me-2"></i>Refresh</button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Back to Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white"><div class="card-body"><h6 class="card-title">Total Requests</h6><h2 class="mb-0">{{ requests.total }}</h2></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark"><div class="card-body"><h6 class="card-title">Pending</h6><h2 class="mb-0">{{ requests.items | selectattr('status', 'equalto', 'Pending') | list | length }}</h2></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white"><div class="card-body"><h6 class="card-title">In Progress</h6><h2 class="mb-0">{{ requests.items | selectattr('status', 'equalto', 'In Progress') | list | length }}</h2></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white"><div class="card-body"><h6 class="card-title">Completed</h6><h2 class="mb-0">{{ requests.items | selectattr('status', 'equalto', 'Completed') | list | length }}</h2></div></div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section mb-4">
+            <div class="row g-3">
+                <div class="col-md-3"><input type="text" class="form-control" id="searchInput" placeholder="Search by student or room..."></div>
+                <div class="col-md-2"><select class="form-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="plumber">Plumber</option>
+                    <option value="cleaner">Cleaner</option>
+                    <option value="electrician">Electrician</option>
+                    <option value="technician">Technician</option>
+                    <option value="pest_controller">Pest Controller</option>
+                </select></div>
+                <div class="col-md-2"><select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select></div>
+                <div class="col-md-2"><select class="form-select" id="priorityFilter">
+                    <option value="">All Priorities</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Urgent">Urgent</option>
+                    <option value="Emergency">Emergency</option>
+                </select></div>
+                <div class="col-md-3"><button class="btn btn-primary w-100" onclick="applyFilters()"><i class="bi bi-funnel me-2"></i>Apply Filters</button></div>
+            </div>
+        </div>
+   
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show">
+                    <i class="bi bi-{{ 'check-circle' if category=='success' else 'exclamation-triangle' }} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Requests Table -->
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="bi bi-table me-2"></i>Request List</h5>
+                <span class="badge bg-primary">{{ requests.total }} Total</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="requestsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Student</th>
+                                <th>Room</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Photo</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Assigned To</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requests.items %}
+                            <tr data-category="{{ req.category }}" data-status="{{ req.status }}" data-priority="{{ req.priority }}">
+                                <td><span class="badge bg-secondary">#{{ req.id }}</span></td>
+                                <td><strong>{{ req.student_name }}</strong><small class="d-block text-muted">{{ req.student_room }}</small></td>
+                                <td><span class="badge bg-light text-dark">{{ req.room_number }}</span></td>
+                                <td>
+                                    {% if req.category == 'plumber' %}<span class="badge bg-info">🚰 Plumber</span>
+                                    {% elif req.category == 'cleaner' %}<span class="badge bg-success">🧹 Cleaner</span>
+                                    {% elif req.category == 'electrician' %}<span class="badge bg-warning text-dark">⚡ Electrician</span>
+                                    {% elif req.category == 'technician' %}<span class="badge bg-primary">🔧 Technician</span>
+                                    {% elif req.category == 'pest_controller' %}<span class="badge bg-danger">🐜 Pest Controller</span>
+                                    {% else %}<span class="badge bg-secondary">{{ req.category }}</span>{% endif %}
+                                </td>
+                                <td><span data-bs-toggle="tooltip" title="{{ req.description }}">{{ req.description | truncate(40, True) }}</span></td>
+                                <td>
+                                    {% if req.photo_path %}
+                                    <img src="/static/{{ req.photo_path }}" class="photo-thumbnail" onclick="showPhoto('/static/{{ req.photo_path }}')" data-bs-toggle="modal" data-bs-target="#photoModal">
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td><span class="badge priority-{{ req.priority|lower }}">{{ req.priority }}</span></td>
+                                <td><span class="badge badge-{{ req.status|lower|replace(' ', '-') }}">{{ req.status }}</span></td>
+                                <td><small>{{ req.created_at | format_datetime }}</small></td>
+                                <td>
+                                    {% if req.status == 'Pending' and staff_by_category[req.category] %}
+                                        <form method="POST" action="{{ url_for('assign', req_id=req.id) }}" class="d-flex flex-column gap-2">
+                                            <select name="staff_id" class="form-select form-select-sm" required>
+                                                <option value="" disabled selected>Select staff...</option>
+                                                {% for staff in staff_by_category[req.category] %}
+                                                <option value="{{ staff.id }}">{{ staff.full_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-person-check me-1"></i>Assign</button>
+                                        </form>
+                                    {% elif req.staff_name %}
+                                        <span class="badge bg-light text-dark"><i class="bi bi-person-badge me-1"></i>{{ req.staff_name }}</span>
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-info" onclick="viewDetails('{{ req.id }}')"><i class="bi bi-eye"></i></button>
+                                        {% if req.status != 'Completed' %}
+                                        <button class="btn btn-outline-warning" onclick="updateStatus('{{ req.id }}')"><i class="bi bi-pencil"></i></button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="11" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>No requests found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white py-3 d-flex justify-content-between align-items-center">
+                <small class="text-muted">Showing {{ requests.items|length }} requests (Page {{ requests.page }} of {{ requests.pages }})</small>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportToCSV()"><i class="bi bi-download me-2"></i>Export CSV</button>
+            </div>
+        </div>
+
+        
+    </main>
+         <!-- Pagination -->
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if requests.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('requests', page=requests.prev_num) }}">Previous</a></li>
+            {% endif %}
+            {% for page_num in requests.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == requests.page %}
+                    <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                    {% else %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('requests', page=page_num) }}">{{ page_num }}</a></li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endfor %}
+            {% if requests.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('requests', page=requests.next_num) }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Request Photo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body text-center"><img src="" id="modalPhoto" class="photo-modal-img" alt="Request photo"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Update Request Status</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form method="POST" action="" id="statusForm">
+                <div class="modal-body">
+                    <input type="hidden" name="request_id" id="statusRequestId">
+                    <div class="mb-3">
+                        <label class="form-label">New Status</label>
+                        <select name="status" class="form-select" required>
+                            <option value="Assigned">Assigned</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Update Status</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl) });
+
+// Sidebar toggle
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.getElementById('mainContent');
+const sidebarToggle = document.getElementById('sidebarToggle');
+sidebarToggle?.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); mainContent.classList.toggle('collapsed'); });
+
+// Theme persistence
+const themeToggle = document.getElementById('themeToggle');
+const currentTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-bs-theme', currentTheme);
+themeToggle.checked = currentTheme === 'dark';
+themeToggle.addEventListener('change', () => {
+    const theme = themeToggle.checked ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    localStorage.setItem('theme', theme);
+});
+
+// Photo modal
+function showPhoto(src) { document.getElementById('modalPhoto').src = src; }
+
+// Filters
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const category = document.getElementById('categoryFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const priority = document.getElementById('priorityFilter').value;
+    
+    const rows = document.querySelectorAll('#requestsTable tbody tr');
+    rows.forEach(row => {
+        if (row.cells.length < 2) return;
+        const studentName = row.cells[1].textContent.toLowerCase();
+        const roomNumber = row.cells[2].textContent.toLowerCase();
+        const rowCategory = row.dataset.category;
+        const rowStatus = row.dataset.status;
+        const rowPriority = row.dataset.priority;
+        let show = true;
+        if (searchTerm && !studentName.includes(searchTerm) && !roomNumber.includes(searchTerm)) show = false;
+        if (category && rowCategory !== category) show = false;
+        if (status && rowStatus !== status) show = false;
+        if (priority && rowPriority !== priority) show = false;
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// View details & Update status
+function viewDetails(requestId) { window.location.href = `/request/${requestId}`; }
+function updateStatus(requestId) { document.getElementById('statusRequestId').value = requestId; document.getElementById('statusForm').action = `/update_status/${requestId}`; new bootstrap.Modal(document.getElementById('statusModal')).show(); }
+
+// Export CSV
+function exportToCSV() {
+    const rows = document.querySelectorAll('#requestsTable tbody tr');
+    let csv = [];
+    csv.push('ID,Student,Room,Category,Priority,Status,Description');
+    rows.forEach(row => {
+        if (row.style.display !== 'none' && row.cells.length > 1) {
+            const rowData = [row.cells[0].textContent.trim().replace('#',''), row.cells[1].textContent.trim(), row.cells[2].textContent.trim(), row.cells[3].textContent.trim(), row.cells[6].textContent.trim(), row.cells[7].textContent.trim(), row.cells[4].textContent.trim()];
+            csv.push(rowData.join(','));
+        }
+    });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'requests_export.csv'; a.click();
+}
+
+document.querySelectorAll('#categoryFilter, #statusFilter, #priorityFilter').forEach(filter => filter.addEventListener('change', applyFilters));
+document.getElementById('searchInput').addEventListener('keyup', applyFilters);
+</script>
+
+</body>
+</html>

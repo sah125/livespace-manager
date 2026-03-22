@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Maintenance Request #{{ request_id }}</title>
+  <style type="text/css">
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f7fa;
+      color: #333333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      padding: 32px 40px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .content {
+      padding: 32px 40px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0 28px 0;
+    }
+    .info-table th,
+    .info-table td {
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    .info-table th {
+      width: 160px;
+      color: #4b5563;
+      font-weight: 500;
+    }
+    .info-table td {
+      font-weight: 500;
+    }
+    .priority-emergency {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    .priority-high {
+      color: #ea580c;
+      font-weight: 600;
+    }
+    .priority-medium {
+      color: #d97706;
+      font-weight: 600;
+    }
+    .priority-low {
+      color: #059669;
+      font-weight: 600;
+    }
+    .description {
+      background-color: #f8fafc;
+      border-left: 4px solid #3b82f6;
+      padding: 16px 20px;
+      margin: 24px 0;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    .footer {
+      background-color: #f8fafc;
+      padding: 24px 40px;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+    }
+    .button {
+      display: inline-block;
+      background-color: #101d3a;
+      color: white;
+      padding: 12px 28px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      margin: 16px 0;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #7274f8;
+    }
+    .small {
+      font-size: 13px;
+      color: #ffffff;
+    }
+
+    photo-container {
+      text-align: center;
+      margin: 28px 0 36px 0;
+    }
+    .photo-caption {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <div class="header">
+      <h1>New Maintenance Request #{{ request_id }}</h1>
+    </div>
+
+    <div class="content">
+
+      <p style="font-size: 16px; line-height: 1.5; margin-top: 0;">
+        A new maintenance request has been submitted in the system.
+      </p>
+
+      <table class="info-table">
+        <tr>
+          <th>Request ID</th>
+          <td>#{{ request_id }}</td>
+        </tr>
+        <tr>
+          <th>Submitted by</th>
+          <td>{{ submitted_by_name }} <span style="color:#6b7280;">({{ submitted_by_email }})</span></td>
+        </tr>
+        <tr>
+          <th>Room</th>
+          <td>{{ room_number }}</td>
+        </tr>
+        <tr>
+          <th>Category</th>
+          <td>{{ category or '—' }}</td>
+        </tr>
+        <tr>
+          <th>Priority</th>
+          <td>
+            {% if priority == 'Emergency' %}
+              <span class="priority-emergency">{{ priority }}</span>
+            {% elif priority == 'High' %}
+              <span class="priority-high">{{ priority }}</span>
+            {% elif priority == 'Medium' %}
+              <span class="priority-medium">{{ priority }}</span>
+            {% else %}
+              <span class="priority-low">{{ priority or 'Normal' }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th>Status</th>
+          <td><strong>{{ status }}</strong></td>
+        </tr>
+        <tr>
+          <th>Created at</th>
+          <td>{{ created_at }}</td>
+        </tr>
+      </table>
+
+      <div class="description">
+        <strong>Description:</strong><br>
+        {{ description | safe }}
+      </div>
+      {% if has_photo %}
+      <div class="photo-container">
+        <img 
+          src="cid:request_photo" 
+          alt="User-uploaded photo for maintenance request in room {{ room_number }}" 
+          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: block; margin: 0 auto;"
+        />
+        <p class="photo-caption">
+          Attached photo showing the issue
+        </p>
+      </div>
+      {% endif %}
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="{{ review_url }}" class="button">Review All Requests →</a>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <p>This is an automated message from the Maintenance Management System.</p>
+      <p class="small">Please do not reply directly to this email.</p>
+    </div>
+
+  </div>
+
+</body>
+</html>

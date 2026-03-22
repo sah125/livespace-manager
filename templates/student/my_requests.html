@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Res Maintenance System - My Requests</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { min-height: 100vh; background-color: #f8f9fa; }
+        .sidebar { min-height: calc(100vh - 56px); background-color: #ffffff; border-right: 1px solid #dee2e6; }
+        .nav-link { color: #495057; padding: 0.75rem 1.25rem; }
+        .nav-link:hover, .nav-link.active { background-color: #e9ecef; color: #0d6efd; }
+        .navbar-brand { font-weight: 600; }
+        .action-btn { font-size: 0.9rem; padding: 0.25rem 0.5rem; }
+
+        /* Status badges */
+        .badge-pending { background-color: #ffc107; color: #000; }
+        .badge-assigned { background-color: #17a2b8; color: #fff; }
+        .badge-in-progress { background-color: #007bff; color: #fff; }
+        .badge-completed { background-color: #28a745; color: #fff; }
+
+        /* Priority badges */
+        .priority-normal { background-color: #6c757d; color: #fff; }
+        .priority-urgent { background-color: #fd7e14; color: #fff; }
+        .priority-emergency { background-color: #dc3545; color: #fff; }
+
+        /* Photo thumbnail */
+        .photo-thumbnail {
+            width: 50px; height: 50px; border-radius: 5px; cursor: pointer; object-fit: cover;
+            border: 2px solid #dee2e6; transition: transform 0.2s;
+        }
+        .photo-thumbnail:hover { transform: scale(1.1); border-color: #0d6efd; }
+        .photo-modal-img { max-width: 100%; max-height: 80vh; }
+
+        /* Category badges */
+        .category-plumber { background-color: #17a2b8; color: white; }
+        .category-cleaner { background-color: #28a745; color: white; }
+        .category-electrician { background-color: #ffc107; color: #000; }
+        .category-technician { background-color: #007bff; color: white; }
+        .category-pest_controller { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#"><i class="bi bi-tools me-2"></i>Res Maintenance System</a>
+        <div class="ms-auto d-flex align-items-center">
+            <div class="dropdown">
+                <a class="d-flex align-items-center text-decoration-none dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:38px;height:38px; background-color: rgba(255,255,255,0.2) !important;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <span class="d-none d-md-block">{{ current_user.full_name }} ({{ current_user.role.title() }})</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-person-circle me-2"></i>Profile</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar col-12 col-md-3 col-lg-2 p-0">
+        <ul class="nav flex-column pt-3">
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="bi bi-house-door me-2"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link active" href="{{ url_for('my_requests') }}"><i class="bi bi-list-check me-2"></i>My Requests</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('new_request') }}"><i class="bi bi-plus-circle me-2"></i>New Request</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <main class="col-12 col-md-9 col-lg-10 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-list-check me-2 text-primary"></i>My Maintenance Requests</h2>
+            <a href="{{ url_for('new_request') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>New Request</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{{ 'check-circle' if category=='success' else 'exclamation-triangle' }} me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Search & Filters -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4"><input type="text" class="form-control" id="searchInput" placeholder="Search by room or description..."></div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Assigned">Assigned</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="priorityFilter">
+                            <option value="">All Priorities</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-primary w-100" onclick="applyFilters()"><i class="bi bi-funnel me-2"></i>Filter</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Requests Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle" id="requestsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th><th>Room/Location</th><th>Category</th><th>Description</th>
+                        <th>Photo</th><th>Priority</th><th>Status</th><th>Assigned To</th>
+                        <th>Created At</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr data-status="{{ req.status }}" data-priority="{{ req.priority }}">
+                        <td>#{{ req.id }}</td>
+                        <td>{{ req.room_number }}</td>
+                        <td>
+                            {% if req.category %}<span class="badge category-{{ req.category }}">{{ req.category|capitalize }}</span>{% endif %}
+                        </td>
+                        <td>{{ req.description | truncate(40, True) }}</td>
+                        <td>
+                            {% if req.photo_path %}
+                                <img src="{{ url_for('static', filename=req.photo_path) }}" class="photo-thumbnail" onclick="showPhoto('{{ url_for('static', filename=req.photo_path) }}')" data-bs-toggle="modal" data-bs-target="#photoModal">
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td><span class="badge priority-{{ req.priority|lower }}">{{ req.priority }}</span></td>
+                        <td><span class="badge badge-{{ req.status|lower|replace(' ', '-') }}">{{ req.status }}</span></td>
+                        <td>{{ req.staff_name if req.staff_name else 'Not assigned' }}</td>
+                        <td>{{ req.created_at | format_datetime }}</td>
+                        <td>
+                            {% if req.status not in ['Assigned','Completed'] %}
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('edit_request', request_id=req.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    <form action="{{ url_for('delete_request', request_id=req.id) }}" method="POST" onsubmit="return confirm('Delete this request?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 mb-3"></i>No requests found.
+                            <div class="mt-3"><a href="{{ url_for('new_request') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Create Request</a></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('my_requests', page=pagination.prev_num) }}">Previous</a></li>
+                {% else %}<li class="page-item disabled"><span class="page-link">Previous</span></li>{% endif %}
+
+                {% for p in range(1, pagination.pages + 1) %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('my_requests', page=p) }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+
+                {% if pagination.has_next %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('my_requests', page=pagination.next_num) }}">Next</a></li>
+                {% else %}<li class="page-item disabled"><span class="page-link">Next</span></li>{% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    </main>
+</div>
+
+<!-- Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-image me-2"></i>Request Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" id="modalPhoto" class="photo-modal-img" alt="Request photo">
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Photo modal
+    function showPhoto(src) { document.getElementById('modalPhoto').src = src; }
+
+    // Filter/search (client-side)
+    function applyFilters() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const priority = document.getElementById('priorityFilter').value;
+        const rows = document.querySelectorAll('#requestsTable tbody tr');
+
+        rows.forEach(row => {
+            if (row.cells.length < 2) return;
+            const room = row.cells[1].textContent.toLowerCase();
+            const desc = row.cells[3].textContent.toLowerCase();
+            const rowStatus = row.dataset.status;
+            const rowPriority = row.dataset.priority;
+            let show = true;
+            if (searchTerm && !room.includes(searchTerm) && !desc.includes(searchTerm)) show = false;
+            if (status && rowStatus !== status) show = false;
+            if (priority && rowPriority !== priority) show = false;
+            row.style.display = show ? '' : 'none';
+        });
+    }
+
+    document.getElementById('searchInput').addEventListener('keyup', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    document.getElementById('priorityFilter').addEventListener('change', applyFilters);
+</script>
+</body>
+</html>

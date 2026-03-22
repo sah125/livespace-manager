@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Res Maintenance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 78px;
+        }
+        body { min-height: 100vh; background: var(--bs-body-bg); }
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: var(--sidebar-width);
+            transition: width 0.35s ease;
+            z-index: 1030;
+            overflow-y: auto;
+            background: var(--bs-dark);
+            color: white;
+        }
+        .sidebar.collapsed { width: var(--sidebar-collapsed-width); }
+        .sidebar.collapsed .sidebar-text { display: none; }
+        .sidebar.collapsed .sidebar-header h4 { display: none; }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.35s ease;
+        }
+        .main-content.collapsed { margin-left: var(--sidebar-collapsed-width); }
+        @media (max-width: 991.98px) {
+            .sidebar { width: 0; }
+            .sidebar.show { width: var(--sidebar-width); }
+            .main-content { margin-left: 0 !important; }
+        }
+        .card-stat {
+            transition: all 0.3s ease;
+            border: none;
+            border-radius: 16px;
+        }
+        .card-stat:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+        }
+        .nav-link { border-radius: 10px; }
+        .nav-link.active, .nav-link:hover { background: rgba(255,255,255,0.12); }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header d-flex align-items-center justify-content-between p-4 border-bottom border-light border-opacity-10">
+        <h4 class="mb-0 sidebar-text">Admin Panel</h4>
+        <button id="sidebarToggle" class="btn btn-link text-white">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+    </div>
+    <div class="p-3">
+        <ul class="nav flex-column gap-2">
+            <li class="nav-item">
+                <a class="nav-link active text-white d-flex align-items-center" href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-speedometer2 fs-4 me-3"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('users') }}">
+                    <i class="bi bi-people fs-4 me-3"></i>
+                    <span class="sidebar-text">Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('requests') }}">
+                    <i class="bi bi-list-check fs-4 me-3"></i>
+                    <span class="sidebar-text">Requests</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('weekly_report') }}">
+                    <i class="bi bi-calendar-week fs-4 me-3"></i>
+                    <span class="sidebar-text">Weekly Report</span>
+                </a>
+            </li>
+            <li class="nav-item mt-auto pt-4">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right fs-4 me-3"></i>
+                    <span class="sidebar-text">Logout</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+    <!-- Topbar -->
+    <header class="navbar navbar-expand-lg bg-white shadow-sm sticky-top px-4">
+        <div class="container-fluid">
+            <button class="btn btn-outline-secondary d-lg-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="themeToggle">
+                    <label class="form-check-label" for="themeToggle"><i class="bi bi-moon-stars"></i></label>
+                </div>
+                <div class="dropdown">
+                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:38px;height:38px;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div class="d-none d-md-block">
+                            <div>{{ current_user.full_name }}</div>
+                            <small class="text-muted">Administrator</small>
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="p-4 p-lg-5">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item active">Dashboard</li>
+            </ol>
+        </nav>
+        
+        <!-- Header with Time Period Buttons -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <h1 class="h2 mb-0">Overview</h1>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary" id="btnToday">
+                    <i class="bi bi-calendar-day me-1"></i>Today
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="btnWeek">
+                    <i class="bi bi-calendar-week me-1"></i>Week
+                </button>
+                <button type="button" class="btn btn-outline-secondary active" id="btnMonth">
+                    <i class="bi bi-calendar-month me-1"></i>Month
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-12 col-sm-6 col-xl-4">
+                <div class="card card-stat bg-primary text-white shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 opacity-75">Total Requests</h6>
+                                <h3 class="mb-0">{{ total_requests|default(0) }}</h3>
+                            </div>
+                            <i class="bi bi-clipboard-data fs-1 opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-4">
+                <div class="card card-stat bg-warning text-dark shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 opacity-75">Pending</h6>
+                                <h3 class="mb-0">{{ pending_requests|default(0) }}</h3>
+                            </div>
+                            <i class="bi bi-hourglass-split fs-1 opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-4">
+                <div class="card card-stat bg-success text-white shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 opacity-75">Completed</h6>
+                                <h3 class="mb-0">{{ completed|default(0) }}</h3>
+                            </div>
+                            <i class="bi bi-check2-all fs-1 opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart + Recent Activity -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card shadow border-0 rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h5 class="mb-0">Request Trends</h5>
+                        <small class="text-muted">Monthly overview • Last 6 months</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 350px;">
+                            <canvas id="myChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow border-0 rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h5 class="mb-0">Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <li class="list-group-item px-0 py-3">
+                                <div class="d-flex">
+                                    <div class="bg-success-subtle text-success rounded-circle p-3 me-3"><i class="bi bi-check2"></i></div>
+                                    <div>
+                                        <strong>Welcome to Admin Dashboard</strong><br>
+                                        <small class="text-muted">System ready</small>
+                                    </div>
+                                </div>
+                            </li>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Theme persistence
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-bs-theme', currentTheme);
+    if (themeToggle) themeToggle.checked = currentTheme === 'dark';
+    
+    if (themeToggle) {
+        themeToggle.addEventListener('change', () => {
+            const theme = themeToggle.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+    }
+    
+    // Sidebar collapse
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('collapsed');
+        });
+    }
+    
+    // Time period buttons
+    document.getElementById('btnWeek')?.addEventListener('click', function() {
+        window.location.href = "{{ url_for('weekly_report') }}";
+    });
+    
+    document.getElementById('btnMonth')?.addEventListener('click', function() {
+        window.location.href = "{{ url_for('dashboard') }}";
+    });
+    
+    document.getElementById('btnToday')?.addEventListener('click', function() {
+        window.location.reload();
+    });
+    
+    // Chart
+    const ctx = document.getElementById('myChart')?.getContext('2d');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Requests',
+                    data: [{{ total_requests|default(0) }}, 10, 15, 20, 25, {{ total_requests|default(0) }}],
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13,110,253,0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

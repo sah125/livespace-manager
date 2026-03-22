@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance Request Assigned - #{{ request_id }}</title>
+  <style>
+    /* Reset */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      color: white;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    .content {
+      padding: 32px 24px;
+    }
+    .info-box {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+      border-left: 4px solid #4f46e5;
+    }
+    .label {
+      font-weight: 600;
+      color: #4b5563;
+      display: inline-block;
+      width: 110px;
+      margin-bottom: 4px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .badge-pending    { background: #fef3c7; color: #92400e; }
+    .badge-assigned   { background: #dbeafe; color: #1e40af; }
+    .badge-inprogress { background: #fef9c3; color: #854d0e; }
+    .badge-completed  { background: #d1fae5; color: #065f46; }
+
+    .btn {
+      display: inline-block;
+      background: #4f46e5;
+      color: white;
+      padding: 12px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      margin: 20px 0;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #4338ca;
+    }
+    .footer {
+      background: #f8fafc;
+      padding: 24px;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+    }
+    .request-id {
+      font-weight: bold;
+      color: #4f46e5;
+    }
+    @media (max-width: 600px) {
+      .container { margin: 16px; }
+      .content { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Maintenance Request Update</h1>
+      <p style="opacity:0.9;">Your request has been assigned • Request #<span class="request-id">{{ request_id }}</span></p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+
+      <p>Hello <strong>{{ student_name|default("Student") }}</strong>,</p>
+      
+      <p>Good news — your maintenance request has been reviewed and assigned to a technician.</p>
+
+      <div class="info-box">
+        <div>
+          <span class="label">Request ID:</span> #{{ request_id }}<br>
+          <span class="label">Room:</span> {{ room_number }}<br>
+          <span class="label">Category:</span> {{ category }}<br>
+          <span class="label">Priority:</span> 
+          <span class="badge badge-{{ priority|lower if priority else 'medium' }}">
+            {{ priority|capitalize }}
+          </span><br>
+          <span class="label">Assigned to:</span> {{ technician_name }}<br>
+          <span class="label">Status:</span> 
+          <span class="badge badge-assigned">Assigned</span>
+        </div>
+        
+        {% if description %}
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <strong style="display:block; margin-bottom:8px;">Description:</strong>
+          <p style="margin:0; color:#4b5563;">{{ description }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <p>You will receive further updates when the technician starts working on it or when the request is completed.</p>
+
+      <!-- Call to Action -->
+      <div style="text-align: center;">
+        <a href="http://127.0.0.1:5000/my-requests" class="btn" target="_blank">
+          View My Requests →
+        </a>
+      </div>
+
+      <p style="margin-top: 32px;">If you have any questions, feel free to contact the maintenance team.</p>
+
+      <p>Thank you for helping us keep the residence in great condition!</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Residence Maintenance System<br>
+      <small>Durban University of Technology • KwaZulu-Natal</small></p>
+      <p style="margin-top:12px;">
+        This is an automated message — please do not reply directly to this email.
+      </p>
+    </div>
+  </div>
+
+</body>
+</html>

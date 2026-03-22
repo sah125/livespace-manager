@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Report | Admin Panel</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 78px;
+        }
+        body {
+            min-height: 100vh;
+            background: var(--bs-body-bg);
+        }
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: var(--sidebar-width);
+            transition: width 0.35s ease;
+            z-index: 1030;
+            overflow-y: auto;
+            background: var(--bs-dark);
+            color: white;
+        }
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-header h4 {
+            display: none;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.35s ease;
+        }
+        .main-content.collapsed {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+        @media (max-width: 991.98px) {
+            .sidebar { width: 0; }
+            .sidebar.show { width: var(--sidebar-width); }
+            .main-content { margin-left: 0 !important; }
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
+        }
+        
+        .chart-container {
+            height: 350px;
+            position: relative;
+        }
+        
+        .week-selector {
+            background: var(--bs-light);
+            border-radius: 12px;
+            padding: 8px;
+        }
+        
+        .week-day {
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .week-day:hover {
+            background: var(--bs-primary);
+            color: white;
+        }
+        
+        .week-day.active {
+            background: var(--bs-primary);
+            color: white;
+        }
+        
+        .week-day .day-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .week-day .day-date {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        
+        .day-stats {
+            font-size: 0.75rem;
+        }
+        
+        .trend-up {
+            color: #28a745;
+        }
+        
+        .trend-down {
+            color: #dc3545;
+        }
+        
+        .report-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .export-btn {
+            transition: all 0.2s;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header d-flex align-items-center justify-content-between p-4 border-bottom border-light border-opacity-10">
+        <h4 class="mb-0 sidebar-text">Admin Panel</h4>
+        <button id="sidebarToggle" class="btn btn-link text-white">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+    </div>
+    <div class="p-3">
+        <ul class="nav flex-column gap-2">
+            <li class="nav-item">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-speedometer2 fs-4 me-3"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('users') }}">
+                    <i class="bi bi-people fs-4 me-3"></i>
+                    <span class="sidebar-text">Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('requests') }}">
+                    <i class="bi bi-list-check fs-4 me-3"></i>
+                    <span class="sidebar-text">Requests</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active text-white d-flex align-items-center" href="#">
+                    <i class="bi bi-calendar-week fs-4 me-3"></i>
+                    <span class="sidebar-text">Weekly Report</span>
+                </a>
+            </li>
+            <li class="nav-item mt-auto pt-4">
+                <a class="nav-link text-white-75 d-flex align-items-center" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right fs-4 me-3"></i>
+                    <span class="sidebar-text">Logout</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+
+    <!-- Topbar -->
+    <header class="navbar navbar-expand-lg bg-white shadow-sm sticky-top px-4">
+        <div class="container-fluid">
+            <button class="btn btn-outline-secondary d-lg-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="themeToggle">
+                    <label class="form-check-label" for="themeToggle"><i class="bi bi-moon-stars"></i></label>
+                </div>
+                
+                <div class="dropdown">
+                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:38px;height:38px;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div class="d-none d-md-block">
+                            <div>{{ current_user.full_name }}</div>
+                            <small class="text-muted">Administrator</small>
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="p-4 p-lg-5">
+        
+        <!-- Report Header with Date Navigation -->
+        <div class="report-header text-white">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2 class="mb-2">
+                        <i class="bi bi-calendar-week me-2"></i>Weekly Performance Report
+                    </h2>
+                    <p class="mb-0 opacity-75">
+                        <i class="bi bi-calendar-range me-1"></i>
+                        {{ week_start.strftime('%B %d, %Y') }} - {{ week_end.strftime('%B %d, %Y') }}
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('weekly_report', week_offset=week_offset-1) }}" class="btn btn-light btn-sm">
+                            <i class="bi bi-chevron-left"></i> Previous Week
+                        </a>
+                        <a href="{{ url_for('weekly_report', week_offset=0) }}" class="btn btn-light btn-sm">
+                            <i class="bi bi-calendar-week"></i> Current Week
+                        </a>
+                        <a href="{{ url_for('weekly_report', week_offset=week_offset+1) }}" class="btn btn-light btn-sm">
+                            Next Week <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                    <div class="mt-2">
+                        <button onclick="window.location.href='{{ url_for('dashboard') }}'" class="btn btn-outline-light btn-sm me-2">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </button>
+                        <button onclick="exportReport()" class="btn btn-success btn-sm">
+                            <i class="bi bi-download"></i> Export Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Stats Overview -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">Total Requests</small>
+                                <h2 class="mb-0">{{ weekly_stats.total }}</h2>
+                                <small class="trend-{{ 'up' if weekly_stats.change >= 0 else 'down' }}">
+                                    <i class="bi bi-arrow-{{ 'up' if weekly_stats.change >= 0 else 'down' }}"></i>
+                                    {{ weekly_stats.change|abs }}% from last week
+                                </small>
+                            </div>
+                            <i class="bi bi-clipboard-data fs-1 text-primary opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">Completed</small>
+                                <h2 class="mb-0 text-success">{{ weekly_stats.completed }}</h2>
+                                <small>Completion Rate: {{ weekly_stats.completion_rate }}%</small>
+                            </div>
+                            <i class="bi bi-check2-circle fs-1 text-success opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">Pending</small>
+                                <h2 class="mb-0 text-warning">{{ weekly_stats.pending }}</h2>
+                                <small>Awaiting action</small>
+                            </div>
+                            <i class="bi bi-hourglass fs-1 text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">In Progress</small>
+                                <h2 class="mb-0 text-info">{{ weekly_stats.in_progress }}</h2>
+                                <small>Active tasks</small>
+                            </div>
+                            <i class="bi bi-arrow-repeat fs-1 text-info opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Week Days Heatmap -->
+        <div class="card shadow border-0 rounded-4 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar3 me-2 text-primary"></i>
+                    Daily Breakdown
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    {% for day in week_days %}
+                    <div class="col">
+                        <div class="week-day text-center p-2" data-day="{{ day.name }}">
+                            <div class="day-name">{{ day.name[:3] }}</div>
+                            <div class="day-date small">{{ day.date.strftime('%d') }}</div>
+                            <div class="mt-2">
+                                <span class="badge bg-primary">{{ day.requests }}</span>
+                            </div>
+                            <div class="day-stats mt-1">
+                                <small class="text-success">{{ day.completed }}</small>
+                                <span class="text-muted">/</span>
+                                <small class="text-warning">{{ day.pending }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-7">
+                <div class="card shadow border-0 rounded-4">
+                    <div class="card-header bg-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-graph-up me-2 text-primary"></i>
+                                Daily Request Trends
+                            </h5>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm active" id="showRequests">Requests</button>
+                                <button class="btn btn-outline-success btn-sm" id="showCompleted">Completed</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="dailyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card shadow border-0 rounded-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pie-chart me-2 text-primary"></i>
+                            Category Distribution
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority Distribution & Top Issues -->
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card shadow border-0 rounded-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle me-2 text-warning"></i>
+                            Priority Breakdown
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 250px;">
+                            <canvas id="priorityChart"></canvas>
+                        </div>
+                        <div class="mt-3">
+                            {% for priority in weekly_stats.priorities %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>
+                                    <span class="badge priority-{{ priority.name|lower }}">{{ priority.name }}</span>
+                                </span>
+                                <span class="fw-bold">{{ priority.count }}</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-{{ 'danger' if priority.name=='Emergency' else 'warning' if priority.name=='High' else 'info' if priority.name=='Medium' else 'secondary' }}" 
+                                     style="width: {{ priority.percentage }}%"></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow border-0 rounded-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-check me-2 text-primary"></i>
+                            Top Issues This Week
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for issue in weekly_stats.top_issues %}
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-{{ 'droplet' if issue.category=='plumber' else 'lightbulb' if issue.category=='electrician' else 'broom' if issue.category=='cleaner' else 'bug' if issue.category=='pest_controller' else 'wrench' }} me-2 text-primary"></i>
+                                    <strong>{{ issue.category|title }}</strong>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">{{ issue.count }}</span>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No issues reported this week
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <hr>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Avg. Response Time</span>
+                                <span class="fw-bold">{{ weekly_stats.avg_response_time }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span>Avg. Completion Time</span>
+                                <span class="fw-bold">{{ weekly_stats.avg_completion_time }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Weekly Activity -->
+        <div class="card shadow border-0 rounded-4 mt-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>
+                    Recent Activity (This Week)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Request ID</th>
+                                <th>Room</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Student</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in weekly_requests %}
+                            <tr>
+                                <td><small>{{ req.created_at.strftime('%b %d, %H:%M') }}</small></td>
+                                <td><span class="badge bg-secondary">#{{ req.id }}</span></td>
+                                <td>{{ req.room_number }}</td>
+                                <td>{{ req.category|title }}</td>
+                                <td>
+                                    <span class="badge priority-{{ req.priority|lower }}">
+                                        {{ req.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge status-{{ req.status|lower|replace(' ', '-') }}">
+                                        {{ req.status }}
+                                    </span>
+                                </td>
+                                <td>{{ req.student_name if req.student_name else 'Unknown' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    No requests this week
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Theme persistence
+const themeToggle = document.getElementById('themeToggle');
+const currentTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-bs-theme', currentTheme);
+if (themeToggle) themeToggle.checked = currentTheme === 'dark';
+
+if (themeToggle) {
+    themeToggle.addEventListener('change', () => {
+        const theme = themeToggle.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('theme', theme);
+    });
+}
+
+// Sidebar collapse
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.getElementById('mainContent');
+const sidebarToggle = document.getElementById('sidebarToggle');
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('collapsed');
+    });
+}
+
+// Daily Chart
+const dailyCtx = document.getElementById('dailyChart')?.getContext('2d');
+if (dailyCtx) {
+    const dailyChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: {{ week_labels|tojson }},
+            datasets: [{
+                label: 'Requests',
+                data: {{ daily_requests|tojson }},
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13,110,253,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#0d6efd',
+                pointBorderColor: '#fff',
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }, {
+                label: 'Completed',
+                data: {{ daily_completed|tojson }},
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40,167,69,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#28a745',
+                pointBorderColor: '#fff',
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Number of Requests' } },
+                x: { title: { display: true, text: 'Day of Week' } }
+            }
+        }
+    });
+}
+
+// Category Chart
+const categoryCtx = document.getElementById('categoryChart')?.getContext('2d');
+if (categoryCtx) {
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|tojson }},
+            datasets: [{
+                data: {{ category_data|tojson }},
+                backgroundColor: ['#0d6efd', '#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6f42c1'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// Priority Chart
+const priorityCtx = document.getElementById('priorityChart')?.getContext('2d');
+if (priorityCtx) {
+    new Chart(priorityCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ priority_labels|tojson }},
+            datasets: [{
+                label: 'Number of Requests',
+                data: {{ priority_data|tojson }},
+                backgroundColor: ['#6c757d', '#0d6efd', '#ffc107', '#dc3545'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Count' } }
+            }
+        }
+    });
+}
+
+// Export Report Function
+function exportReport() {
+    window.location.href = "{{ url_for('export_weekly_report') }}";
+}
+
+// Toggle between request/completed views (optional)
+document.getElementById('showRequests')?.addEventListener('click', () => {
+    // Could re-render chart with different data
+});
+</script>
+
+<style>
+.priority-emergency { background-color: #dc3545; color: white; }
+.priority-high { background-color: #fd7e14; color: white; }
+.priority-medium { background-color: #ffc107; color: black; }
+.priority-low { background-color: #6c757d; color: white; }
+.status-pending { background-color: #ffc107; color: black; }
+.status-assigned { background-color: #17a2b8; color: white; }
+.status-in-progress { background-color: #0d6efd; color: white; }
+.status-completed { background-color: #28a745; color: white; }
+.trend-up { color: #28a745; }
+.trend-down { color: #dc3545; }
+</style>
+
+<!-- ========================================== -->
+<!-- STUNNING REQUEST DETAIL MODAL - STARTS HERE -->
+<!-- ========================================== -->
+
+<style>
+    /* Modal Animation Styles */
+    .stunning-modal .modal-content {
+        border: none;
+        border-radius: 24px;
+        overflow: hidden;
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
+    }
+    
+    .stunning-modal.show .modal-content {
+        transform: scale(1);
+    }
+    
+    .modal-header-glow {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .modal-header-glow::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.5); opacity: 0.2; }
+    }
+    
+    .priority-badge-large {
+        font-size: 1.2rem;
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-weight: 700;
+        display: inline-block;
+    }
+    
+    .priority-emergency-large {
+        background: linear-gradient(135deg, #dc3545, #ff6b6b);
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        animation: shake 0.5s ease-in-out;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+    
+    .priority-high-large {
+        background: linear-gradient(135deg, #fd7e14, #ffb347);
+        color: white;
+        box-shadow: 0 4px 15px rgba(253, 126, 20, 0.4);
+    }
+    
+    .priority-medium-large {
+        background: linear-gradient(135deg, #ffc107, #ffdb4d);
+        color: #856404;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    }
+    
+    .priority-low-large {
+        background: linear-gradient(135deg, #28a745, #5cb85c);
+        color: white;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+    
+    .detail-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+    
+    .detail-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: #667eea;
+    }
+    
+    .detail-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 15px;
+    }
+    
+    .category-badge {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    
+    .status-badge-large {
+        font-size: 1rem;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-weight: 700;
+    }
+    
+    .modal-footer-glow {
+        background: #f8f9fa;
+        padding: 20px 30px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .btn-close-custom {
+        background: rgba(255,255,255,0.3);
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        color: white;
+        border: none;
+    }
+    
+    .btn-close-custom:hover {
+        background: rgba(255,255,255,0.5);
+        transform: rotate(90deg);
+    }
+    
+    .request-detail-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .request-detail-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+    
+    .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #667eea, #764ba2, transparent);
+        margin: 20px 0;
+    }
+    
+    /* Floating animation */
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    
+    .float-animation {
+        animation: float 2s ease-in-out infinite;
+    }
+</style>
+
+<!-- Stunning Modal -->
+<div class="modal fade stunning-modal" id="requestDetailModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <!-- Animated Header -->
+            <div class="modal-header-glow text-white position-relative">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill fs-1 me-3 float-animation"></i>
+                        <div>
+                            <h3 class="mb-0 fw-bold" id="modalRequestId">Request #<span id="modalReqId">0</span></h3>
+                            <p class="mb-0 opacity-75 mt-1">
+                                <i class="bi bi-building me-1"></i>Room <span id="modalRoomNumber">-</span>
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close-custom" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <span id="modalPriorityBadge" class="priority-badge-large">-</span>
+                </div>
+            </div>
+            
+            <!-- Modal Body - Stunning Details -->
+            <div class="modal-body p-4" style="background: #f8f9fa;">
+                <!-- Category & Status Row -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="detail-card">
+                            <div class="d-flex align-items-center">
+                                <div class="detail-icon bg-info bg-opacity-10 text-info">
+                                    <i class="bi bi-tag fs-3"></i>
+                                </div>
+                                <div>
+                                    <div class="request-detail-label">Category</div>
+                                    <div class="request-detail-value" id="modalCategory">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-card">
+                            <div class="d-flex align-items-center">
+                                <div class="detail-icon bg-success bg-opacity-10 text-success">
+                                    <i class="bi bi-check-circle fs-3"></i>
+                                </div>
+                                <div>
+                                    <div class="request-detail-label">Status</div>
+                                    <div class="request-detail-value" id="modalStatus">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Description Card -->
+                <div class="detail-card">
+                    <div class="d-flex align-items-start">
+                        <div class="detail-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-chat-text fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="request-detail-label mb-2">Issue Description</div>
+                            <div class="request-detail-value" id="modalDescription" style="font-size: 1rem; line-height: 1.6;">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Student Info Card -->
+                <div class="detail-card">
+                    <div class="d-flex align-items-start">
+                        <div class="detail-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-person-badge fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="request-detail-label mb-2">Reported By</div>
+                            <div class="request-detail-value" id="modalStudent">-</div>
+                            <div class="text-muted mt-1" id="modalStudentRoom"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Date & Time Card -->
+                <div class="detail-card">
+                    <div class="d-flex align-items-start">
+                        <div class="detail-icon bg-secondary bg-opacity-10 text-secondary">
+                            <i class="bi bi-calendar-clock fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="request-detail-label mb-2">Reported On</div>
+                            <div class="request-detail-value" id="modalCreatedAt">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Urgency Meter -->
+                <div class="detail-card" id="urgencyMeterCard">
+                    <div class="d-flex align-items-start">
+                        <div class="detail-icon bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-speedometer2 fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="request-detail-label mb-2">Urgency Level</div>
+                            <div class="progress" style="height: 12px; border-radius: 10px;">
+                                <div id="urgencyProgress" class="progress-bar" role="progressbar" style="width: 0%; border-radius: 10px;"></div>
+                            </div>
+                            <div class="mt-2">
+                                <span id="urgencyText" class="badge"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <!-- Quick Actions -->
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-2" id="modalViewInRequests">
+                            <i class="bi bi-eye me-2"></i>View in Requests
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-success w-100 py-2" data-bs-dismiss="modal">
+                            <i class="bi bi-check-lg me-2"></i>Got it
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer with Animation -->
+            <div class="modal-footer-glow">
+                <div class="text-center w-100">
+                    <small class="text-muted">
+                        <i class="bi bi-activity me-1"></i>
+                        Need immediate assistance? Contact maintenance desk at extension 1234
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to show stunning modal with request details
+function showRequestDetails(requestId, roomNumber, category, priority, status, description, studentName, studentRoom, createdAt) {
+    // Update modal content
+    document.getElementById('modalReqId').textContent = requestId;
+    document.getElementById('modalRoomNumber').textContent = roomNumber;
+    document.getElementById('modalCategory').textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    document.getElementById('modalStatus').textContent = status;
+    document.getElementById('modalDescription').textContent = description;
+    document.getElementById('modalStudent').textContent = studentName;
+    document.getElementById('modalStudentRoom').textContent = `Room: ${studentRoom}`;
+    document.getElementById('modalCreatedAt').textContent = createdAt;
+    
+    // Update priority badge with animation
+    const priorityBadge = document.getElementById('modalPriorityBadge');
+    priorityBadge.className = 'priority-badge-large';
+    
+    let urgencyPercentage = 0;
+    let urgencyColor = '';
+    let urgencyText = '';
+    
+    switch(priority.toLowerCase()) {
+        case 'emergency':
+            priorityBadge.classList.add('priority-emergency-large');
+            priorityBadge.innerHTML = '🚨 EMERGENCY - Immediate Action Required';
+            urgencyPercentage = 100;
+            urgencyColor = 'bg-danger';
+            urgencyText = 'CRITICAL - Respond Immediately';
+            break;
+        case 'high':
+            priorityBadge.classList.add('priority-high-large');
+            priorityBadge.innerHTML = '⚠️ HIGH - Urgent Attention Needed';
+            urgencyPercentage = 75;
+            urgencyColor = 'bg-warning';
+            urgencyText = 'URGENT - Respond within 4 hours';
+            break;
+        case 'medium':
+            priorityBadge.classList.add('priority-medium-large');
+            priorityBadge.innerHTML = '📌 MEDIUM - Normal Priority';
+            urgencyPercentage = 50;
+            urgencyColor = 'bg-info';
+            urgencyText = 'NORMAL - Respond within 24 hours';
+            break;
+        default:
+            priorityBadge.classList.add('priority-low-large');
+            priorityBadge.innerHTML = '✅ LOW - Standard Priority';
+            urgencyPercentage = 25;
+            urgencyColor = 'bg-success';
+            urgencyText = 'LOW - Respond within 72 hours';
+    }
+    
+    // Update urgency meter
+    const urgencyProgress = document.getElementById('urgencyProgress');
+    urgencyProgress.style.width = urgencyPercentage + '%';
+    urgencyProgress.className = `progress-bar ${urgencyColor}`;
+    
+    const urgencyTextSpan = document.getElementById('urgencyText');
+    urgencyTextSpan.className = `badge ${urgencyColor.replace('bg-', 'bg-')} mt-1`;
+    urgencyTextSpan.innerHTML = `<i class="bi bi-${priority.toLowerCase() === 'emergency' ? 'exclamation-triangle' : 'info-circle'} me-1"></i>${urgencyText}`;
+    
+    // Set up the "View in Requests" button
+    const viewBtn = document.getElementById('modalViewInRequests');
+    viewBtn.onclick = function() {
+        window.location.href = `/requests?search=${requestId}`;
+    };
+    
+    // Show modal with animation
+    const modal = new bootstrap.Modal(document.getElementById('requestDetailModal'));
+    modal.show();
+}
+
+// Make table rows clickable to show modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers to all request rows in the recent activity table
+    const requestRows = document.querySelectorAll('#requestsTable tbody tr, .table tbody tr');
+    
+    requestRows.forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', function(e) {
+            // Don't trigger if clicking on a button or form element
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('button')) {
+                return;
+            }
+            
+            // Extract data from the row
+            const cells = this.cells;
+            if (cells.length >= 7) {
+                const requestId = cells[0]?.textContent.trim().replace('#', '') || '0';
+                const roomNumber = cells[2]?.textContent.trim() || 'N/A';
+                const category = cells[3]?.textContent.trim() || 'N/A';
+                const priority = cells[5]?.textContent.trim() || 'Medium';
+                const status = cells[6]?.textContent.trim() || 'Pending';
+                const description = cells[4]?.textContent.trim() || 'No description available';
+                const studentName = cells[7]?.querySelector('strong')?.textContent.trim() || cells[7]?.textContent.trim() || 'Student';
+                const studentRoom = cells[7]?.querySelector('.text-muted')?.textContent.trim() || roomNumber;
+                const createdAt = cells[8]?.textContent.trim() || new Date().toLocaleString();
+                
+                showRequestDetails(requestId, roomNumber, category, priority, status, description, studentName, studentRoom, createdAt);
+            }
+        });
+    });
+    
+    // Also add click handlers for the recent activity list items
+    const activityItems = document.querySelectorAll('.list-group-item, .activity-item');
+    activityItems.forEach(item => {
+        if (item.textContent.includes('Request #') || item.textContent.includes('#')) {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', function() {
+                // Extract request ID from text
+                const text = this.textContent;
+                const match = text.match(/#(\d+)/);
+                if (match) {
+                    const requestId = match[1];
+                    // Find the row in the table with this ID
+                    const row = document.querySelector(`#requestsTable tbody tr:contains("#${requestId}")`);
+                    if (row) {
+                        row.click();
+                    } else {
+                        // Fallback: try to find any row with that ID
+                        const allRows = document.querySelectorAll('#requestsTable tbody tr');
+                        for (let row of allRows) {
+                            if (row.textContent.includes(`#${requestId}`)) {
+                                row.click();
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+});
+
+// Helper function for :contains selector
+jQuery.fn = jQuery.fn || {};
+if (typeof jQuery !== 'undefined') {
+    jQuery.expr[':'].contains = function(a, i, m) {
+        return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
+    };
+}
+</script>
+
+<!-- Add some additional CSS for row hover effect -->
+<style>
+    #requestsTable tbody tr:hover,
+    .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    #requestsTable tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .list-group-item:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        cursor: pointer;
+    }
+</style>
+
+<!-- ========================================== -->
+<!-- STUNNING REQUEST DETAIL MODAL - ENDS HERE -->
+<!-- ========================================== -->
+
+</body>
+</html>

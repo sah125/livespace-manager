@@ -1,0 +1,446 @@
+<!-- templates/student/edit_request.html -->
+{% extends "base.html" %}
+
+{% block title %}Edit Maintenance Request #{{ request.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .current-photo {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+        margin-bottom: 10px;
+    }
+    
+    .photo-preview {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 8px;
+        margin-top: 10px;
+        display: none;
+        border: 2px dashed #0d6efd;
+        padding: 5px;
+    }
+    
+    .info-alert {
+        border-left: 4px solid #17a2b8;
+        background-color: #f8f9fa;
+    }
+    
+    .field-icon {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .status-badge {
+        font-size: 1rem;
+        padding: 8px 15px;
+    }
+    
+    .readonly-field {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
+    
+    .photo-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('my_requests') }}">My Requests</a></li>
+            <li class="breadcrumb-item active">Edit Request #{{ request.id }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2 text-primary"></i>
+                        Edit Maintenance Request #{{ request.id }}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Request Status Alert -->
+                    <div class="alert alert-info info-alert d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <div>
+                            <strong>Request Status:</strong> 
+                            <span class="badge bg-{% if request.status == 'Pending' %}warning{% elif request.status == 'Assigned' %}info{% elif request.status == 'In Progress' %}primary{% elif request.status == 'Completed' %}success{% endif %} status-badge ms-2">
+                                {{ request.status }}
+                            </span>
+                            <br>
+                            <small class="text-muted">Created on {{ request.created_at | format_datetime }}</small>
+                        </div>
+                    </div>
+
+                    <!-- Edit Form -->
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        <!-- Room Number -->
+                        <div class="mb-4">
+                            <label for="room_number" class="form-label fw-semibold">
+                                <i class="bi bi-door-open me-2 text-primary"></i>Room / Location
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="room_number" 
+                                       name="room_number"
+                                       value="{{ request.room_number }}" 
+                                       placeholder="e.g., B204, Room 101"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please enter the room number or location.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-4">
+                            <label for="category" class="form-label fw-semibold">
+                                <i class="bi bi-tag me-2 text-primary"></i>Category
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="" disabled>Select category...</option>
+                                <option value="plumber" {% if request.category == "plumber" %}selected{% endif %}>🚰 Plumber</option>
+                                <option value="cleaner" {% if request.category == "cleaner" %}selected{% endif %}>🧹 Cleaner</option>
+                                <option value="electrician" {% if request.category == "electrician" %}selected{% endif %}>⚡ Electrician</option>
+                                <option value="technician" {% if request.category == "technician" %}selected{% endif %}>🔧 Technician</option>
+                                <option value="pest_controller" {% if request.category == "pest_controller" %}selected{% endif %}>🐜 Pest Controller</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a category.
+                            </div>
+                        </div>
+
+                        <!-- Priority -->
+                        <div class="mb-4">
+                            <label for="priority" class="form-label fw-semibold">
+                                <i class="bi bi-exclamation-triangle me-2 text-primary"></i>Priority
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="priority" name="priority" required>
+                                <option value="Normal" {% if request.priority == "Normal" %}selected{% endif %}>🟢 Normal</option>
+                                <option value="Urgent" {% if request.priority == "Urgent" %}selected{% endif %}>🟡 Urgent</option>
+                                <option value="Emergency" {% if request.priority == "Emergency" %}selected{% endif %}>🔴 Emergency</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select priority level.
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-semibold">
+                                <i class="bi bi-card-text me-2 text-primary"></i>Description
+                                <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="5" 
+                                      placeholder="Please describe the issue in detail..."
+                                      required>{{ request.description }}</textarea>
+                            <div class="invalid-feedback">
+                                Please provide a description of the issue.
+                            </div>
+                        </div>
+
+                        <!-- Current Photo (if exists) -->
+                        {% if request.photo_path %}
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-image me-2 text-primary"></i>Current Photo
+                            </label>
+                            <div class="photo-actions">
+                                <img src="{{ url_for('static', filename=request.photo_path) }}" 
+                                     class="current-photo" 
+                                     alt="Current request photo"
+                                      onclick="showPhoto(this.getAttribute('data-photo-src'))"
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#photoModal"
+                                     style="cursor: pointer;">
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePhoto()">
+                                        <i class="bi bi-trash me-1"></i>Remove Photo
+                                    </button>
+                                    <input type="hidden" name="remove_photo" id="removePhoto" value="false">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Upload New Photo -->
+                        <div class="mb-4">
+                            <label for="photo" class="form-label fw-semibold">
+                                <i class="bi bi-camera me-2 text-primary"></i>
+                                {% if request.photo_path %}Replace Photo{% else %}Upload Photo{% endif %}
+                                <small class="text-muted">(Optional)</small>
+                            </label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="photo" 
+                                   name="photo"
+                                   accept="image/png, image/jpeg, image/jpg, image/gif"
+                                   onchange="previewImage(this)">
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Allowed formats: PNG, JPG, JPEG, GIF. Max size: 16MB
+                            </div>
+                            
+                            <!-- Image Preview -->
+                            <img id="imagePreview" class="photo-preview" src="#" alt="New photo preview">
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top">
+                            <div>
+                                <small class="text-muted">
+                                    <i class="bi bi-asterisk text-danger me-1"></i>
+                                    Required fields
+                                </small>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('my_requests') }}" class="btn btn-outline-secondary btn-lg me-2">
+                                    <i class="bi bi-x-circle me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle me-2"></i>Update Request
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Request Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <strong><i class="bi bi-hash me-2"></i>Request ID:</strong>
+                            <span class="float-end">#{{ request.id }}</span>
+                        </li>
+                        <li class="mb-3">
+                            <strong><i class="bi bi-calendar me-2"></i>Created:</strong>
+                            <span class="float-end">{{ request.created_at | format_datetime }}</span>
+                        </li>
+                        <li class="mb-3">
+                            <strong><i class="bi bi-arrow-repeat me-2"></i>Last Updated:</strong>
+                            <span class="float-end">{{ request.updated_at | format_datetime if request.updated_at else 'N/A' }}</span>
+                        </li>
+                        <li class="mb-3">
+                            <strong><i class="bi bi-person-badge me-2"></i>Assigned To:</strong>
+                            <span class="float-end">
+                                {% if request.staff_name %}
+                                    {{ request.staff_name }}
+                                {% else %}
+                                    <span class="text-muted">Not assigned yet</span>
+                                {% endif %}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning bg-opacity-25 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Edit Limitations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            You can edit pending requests only
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Category can be changed
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Photos can be added/updated
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                            Cannot edit assigned/completed requests
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                            Cannot change after staff assigned
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-image me-2"></i>
+                    Request Photo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" id="modalPhoto" class="img-fluid" alt="Request photo" style="max-height: 80vh;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Bootstrap form validation
+(function () {
+    'use strict'
+    const forms = document.querySelectorAll('.needs-validation')
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// Image preview
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Show photo in modal
+function showPhoto(src) {
+    document.getElementById('modalPhoto').src = src;
+}
+
+// Remove photo
+function removePhoto() {
+    if (confirm('Are you sure you want to remove the current photo?')) {
+        document.getElementById('removePhoto').value = 'true';
+        
+        // Hide current photo
+        const currentPhoto = document.querySelector('.current-photo');
+        if (currentPhoto) {
+            currentPhoto.style.opacity = '0.5';
+        }
+        
+        // Show message
+        alert('Photo will be removed when you save changes.');
+    }
+}
+
+// Warn before leaving if form has changes
+let formChanged = false;
+
+document.querySelectorAll('form input, form select, form textarea').forEach(element => {
+    element.addEventListener('change', () => formChanged = true);
+});
+
+document.getElementById('photo').addEventListener('change', () => formChanged = true);
+
+window.addEventListener('beforeunload', function(e) {
+    if (formChanged) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+    }
+});
+
+// Category change confirmation
+document.getElementById('category').addEventListener('change', function() {
+    if (formChanged) {
+        const originalValue = '{{ request.category }}';
+        if (this.value !== originalValue) {
+            console.log('Category changed from', originalValue, 'to', this.value);
+        }
+    }
+});
+
+// Priority color preview
+document.getElementById('priority').addEventListener('change', function() {
+    const priorityMap = {
+        'Normal': '🟢',
+        'Urgent': '🟡',
+        'Emergency': '🔴'
+    };
+    
+    if (this.value) {
+        const selectedOption = this.options[this.selectedIndex];
+        selectedOption.text = priorityMap[this.value] + ' ' + this.value;
+    }
+});
+
+// File size validation
+document.getElementById('photo').addEventListener('change', function() {
+    const file = this.files[0];
+    if (file && file.size > 16 * 1024 * 1024) { // 16MB
+        alert('File is too large. Maximum size is 16MB.');
+        this.value = '';
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+});
+
+// Auto-resize textarea
+const textarea = document.getElementById('description');
+textarea.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+
+// Trigger on load
+window.addEventListener('load', function() {
+    textarea.style.height = 'auto';
+    textarea.style.height = (textarea.scrollHeight) + 'px';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,397 @@
+{% block title %}Create New User - Admin Panel{% endblock %}
+<link rel="stylesheet" href="{{ url_for('static', filename='RegStyle.css') }}">
+{% block content %}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-xl-5 col-lg-6 col-md-8">
+
+            <div class="card border-0 shadow-lg overflow-hidden rounded-4 animate__animated animate__fadeInUp">
+                <!-- Header -->
+                <div class="card-header bg-gradient-primary text-white border-0 py-4 position-relative">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="mb-1 fw-bold">Create New Account</h4>
+                            <p class="mb-0 opacity-75 small">Add a new team member or student</p>
+                        </div>
+                        <i class="bi bi-person-plus-fill fs-1 opacity-50"></i>
+                    </div>
+
+                    <!-- Subtle overlay pattern -->
+                    <div class="header-overlay"></div>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center" role="alert">
+                                    <i class="bi bi-{{ 'check-circle' if category=='success' else 'exclamation-triangle' }} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Info Alert -->
+                    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <div>
+                            <strong>Note:</strong> Room number is required for students only.
+                        </div>
+                    </div>
+
+                    <form method="POST" class="needs-validation" novalidate>
+                        <!-- Full Name -->
+                        <div class="mb-4">
+                            <label for="full_name" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-person me-2 text-primary"></i>Full Name <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text"
+                                       class="form-control border-start-0"
+                                       id="full_name"
+                                       name="full_name"
+                                       placeholder="Johnathan Doe"
+                                       required
+                                       autofocus>
+                                <div class="invalid-feedback">
+                                    Please enter the full name
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-4">
+                            <label for="email" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-envelope me-2 text-primary"></i>Email Address <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email"
+                                       class="form-control border-start-0"
+                                       id="email"
+                                       name="email"
+                                       placeholder="john.doe@example.com"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please enter a valid email address
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-lock me-2 text-primary"></i>Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <input type="password"
+                                       class="form-control border-start-0"
+                                       id="password"
+                                       name="password"
+                                       placeholder="••••••••••••"
+                                       required
+                                       minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <div class="invalid-feedback">
+                                    Minimum 8 characters required
+                                </div>
+                            </div>
+                            <div class="form-text text-muted mt-2 small">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Use at least 8 characters with a mix of letters, numbers & symbols
+                            </div>
+                        </div>
+
+                        <!-- Role -->
+                        <div class="mb-4">
+                            <label for="role" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-shield-lock me-2 text-primary"></i>User Role <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select form-select-lg"
+                                    id="role"
+                                    name="role"
+                                    required>
+                                <option value="" disabled selected>Select role...</option>
+                                <option value="admin">👑 Administrator</option>
+                                <option value="plumber">🚰 Plumber</option>
+                                <option value="cleaner">🧹 Cleaner</option>
+                                <option value="electrician">⚡ Electrician</option>
+                                <option value="technician">🔧 Technician</option>
+                                <option value="pest_controller">🐜 Pest Controller</option>
+                                <option value="student">🎓 Student</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a role
+                            </div>
+                        </div>
+
+                        <!-- Room Number (Conditional - Only for Students) -->
+                        <div class="mb-4" id="roomField" style="display: none;">
+                            <label for="room_number" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-door-open me-2 text-primary"></i>Room Number <span class="text-danger" id="roomRequired">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-building"></i>
+                                </span>
+                                <input type="text"
+                                       class="form-control border-start-0"
+                                       id="room_number"
+                                       name="room_number"
+                                       placeholder="e.g., B204, Room 101">
+                                <div class="invalid-feedback">
+                                    Room number is required for students
+                                </div>
+                            </div>
+                            <div class="form-text text-muted mt-2 small">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Enter the student's room or hostel number
+                            </div>
+                        </div>
+
+                        <!-- Student Preview Card -->
+                        <div class="card bg-light border-0 mb-4" id="studentPreview" style="display: none;">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
+                                        <i class="bi bi-person-badge fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Student Account Preview</h6>
+                                        <p class="mb-0 text-muted small">
+                                            <i class="bi bi-door-open me-1"></i>
+                                            Room number: <span id="previewRoom" class="fw-bold">Not set</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-3 d-md-flex justify-content-md-end mt-5">
+                            <a href="{{ url_for('users') }}"
+                               class="btn btn-outline-secondary btn-lg px-5">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                            <button type="submit"
+                                    class="btn btn-primary btn-lg px-5 shadow-sm">
+                                <i class="bi bi-person-plus me-2"></i>Create User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card-footer bg-light border-0 text-center py-4 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    New accounts are active immediately — no email verification required
+                </div>
+            </div>
+
+            <!-- Optional subtle branding / version info -->
+            <div class="text-center mt-3 text-muted small">
+                <i class="bi bi-shield-check me-1"></i>
+                Secure • Role-based access • Room assignment for students
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .header-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 0 L100 100 M100 0 L0 100" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
+        opacity: 0.3;
+        pointer-events: none;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        transition: transform 0.2s;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+    }
+    
+    /* Animation for room field */
+    #roomField {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    /* Role icons in select */
+    select option {
+        padding: 10px;
+    }
+    
+    .card {
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Bootstrap 5 form validation
+(function () {
+    'use strict'
+    const forms = document.querySelectorAll('.needs-validation')
+
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            const role = document.getElementById('role').value;
+            const roomInput = document.getElementById('room_number');
+            
+            // Additional validation for student room number
+            if (role === 'student') {
+                if (!roomInput.value || roomInput.value.trim() === '') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    roomInput.classList.add('is-invalid');
+                } else {
+                    roomInput.classList.remove('is-invalid');
+                }
+            }
+            
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// Role-based room field visibility
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    const roomField = document.getElementById('roomField');
+    const studentPreview = document.getElementById('studentPreview');
+    const roomInput = document.getElementById('room_number');
+    const previewRoom = document.getElementById('previewRoom');
+    const roomRequired = document.getElementById('roomRequired');
+    
+    function toggleRoomField() {
+        const selectedRole = roleSelect.value;
+        
+        if (selectedRole === 'student') {
+            // Show room field with animation
+            roomField.style.display = 'block';
+            roomInput.required = true;
+            roomRequired.style.display = 'inline';
+            
+            // Show preview
+            studentPreview.style.display = 'block';
+            
+            // Animate
+            roomField.style.opacity = '0';
+            setTimeout(() => {
+                roomField.style.opacity = '1';
+            }, 50);
+        } else {
+            // Hide room field
+            roomField.style.display = 'none';
+            roomInput.required = false;
+            roomInput.value = '';
+            roomRequired.style.display = 'none';
+            studentPreview.style.display = 'none';
+        }
+    }
+    
+    // Update preview as user types
+    roomInput.addEventListener('input', function() {
+        if (roleSelect.value === 'student') {
+            previewRoom.textContent = this.value || 'Not set';
+        }
+    });
+    
+    roleSelect.addEventListener('change', toggleRoomField);
+    
+    // Initial check in case of form reload
+    toggleRoomField();
+});
+
+// Password visibility toggle
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const icon = this.querySelector('i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+});
+
+// Live room number validation
+document.getElementById('room_number').addEventListener('input', function() {
+    if (this.value && this.value.trim() !== '') {
+        this.classList.remove('is-invalid');
+    }
+});
+
+// Role change confirmation for critical roles
+document.getElementById('role').addEventListener('change', function() {
+    const selectedRole = this.value;
+    const roleText = this.options[this.selectedIndex].text;
+    
+    if (selectedRole === 'admin') {
+        if (!confirm('Creating an admin user gives full system access. Continue?')) {
+            this.value = '';
+        }
+    }
+});
+</script>
+{% endblock %}

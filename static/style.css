@@ -1,0 +1,70 @@
+body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+    .login-container {
+      max-width: 420px;
+      width: 100%;
+      margin: auto;
+    }
+    .card {
+      border: none;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+    .card-header {
+      background: linear-gradient(90deg, #0d6efd, #0b5ed7);
+      color: white;
+      text-align: center;
+      padding: 2.2rem 1.5rem;
+      border-bottom: none;
+    }
+    .card-header h2 {
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    .card-body {
+      padding: 2.5rem 2.25rem;
+    }
+    .form-control {
+      border-radius: 10px;
+      padding: 0.75rem 1.1rem;
+      border: 1px solid #d1d5db;
+    }
+    .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.15);
+    }
+    .btn-primary {
+      border-radius: 10px;
+      padding: 0.75rem;
+      font-weight: 500;
+      background: linear-gradient(90deg, #0d6efd, #0b5ed7);
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(13,110,253,0.3);
+    }
+    .input-group-text {
+      border-radius: 10px 0 0 10px;
+      background-color: #f8f9fa;
+    }
+    .forgot-link {
+      font-size: 0.95rem;
+      color: #6c757d;
+    }
+    .forgot-link:hover {
+      color: #0d6efd;
+      text-decoration: underline;
+    }
+    .brand-logo {
+      font-size: 2.1rem;
+      margin-bottom: 0.5rem;
+    }
+ 
